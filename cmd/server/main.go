@@ -26,6 +26,9 @@ func main() {
 	db.Connection()
 	db.DB.AutoMigrate(&models.User{})
 	db.DB.AutoMigrate(&models.Product{})
+	db.DB.AutoMigrate(&models.Cart{}, &models.CartItem{})
+	db.DB.AutoMigrate(&models.Order{},&models.OrderItem{})
+	
 
 
 	userRepo := repo.NewUserRepo(db.DB)
@@ -36,6 +39,16 @@ func main() {
 	productRepo:=repo.NewProductRepo(db.DB)
 	productsvc:=service.NewProductService(productRepo)
 	productHandler:=handlers.NewProductHandler(productsvc)
+
+	cartRepo:=repo.NewCartRepo(db.DB)
+	cartItemRepo:=repo.NewCartItemRepo(db.DB)
+	
+	cartSvc:=service.NewCartService(cartRepo,cartItemRepo)
+	cartHandler:=handlers.NewCartHandler(cartSvc)
+
+
+
+
 
 
 	r := gin.Default()
@@ -73,6 +86,15 @@ func main() {
 
 	})
 	adminGroup.POST("/products",productHandler.Create)
+	adminGroup.DELETE("/products",productHandler.Delete)
+
+	cart:=r.Group("/cart")
+	cart.Use(middleware.AuthMiddleware())
+
+	cart.POST("/add",cartHandler.AddToCart)
+	cart.GET("", cartHandler.GetCart)
+	cart.DELETE("/item/:product_id", cartHandler.RemoveItem)
+	cart.DELETE("/clear", cartHandler.ClearCart)
 
 	port := os.Getenv("PORT")
 	if port == "" {

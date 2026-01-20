@@ -98,3 +98,29 @@ func(h *ProductHandler)Delete(c *gin.Context){
 	c.JSON(http.StatusCreated, gin.H{"msg": "product updated"})
 
 }
+
+func (h *ProductHandler) Update(c *gin.Context) {
+
+	idparam, err := strconv.Atoi(c.Param("id"))
+	if err != nil || idparam <= 0 {
+		c.JSON(400, gin.H{"error": "invalid id"})
+		return
+	}
+
+	var body models.Product
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": "invalid body"})
+		return
+	}
+
+	body.ID = uint(idparam)
+
+	err = h.service.UpdateProduct(&body)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "updated"})
+}
