@@ -86,17 +86,24 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"msg": "product created","product":product})
 
 }
-func(h *ProductHandler)Delete(c *gin.Context){
-	idstr:=c.Param("id")
-	idint,err:=strconv.Atoi(idstr)
-     id:=uint(idint)
+func (h *ProductHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+
+	idInt, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	id := uint(idInt)
+
 	err = h.service.DeleteProduct(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"msg": "product updated"})
 
+	c.JSON(http.StatusOK, gin.H{"msg": "product deleted successfully"})
 }
 
 func (h *ProductHandler) Update(c *gin.Context) {

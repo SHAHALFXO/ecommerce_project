@@ -62,12 +62,39 @@ func (r *OrderRepo) GetOrderByID(orderID uint) (*models.Order, error) {
 	return &order, nil
 }
 func (r *OrderRepo) UpdateOrderStatus(orderID uint, status string) error {
+	result:= r.db.
+		Model(&models.Order{}).
+		Where("id = ?", orderID).
+		Update("status", status)
+		
+	if result.Error!=nil{
+		return result.Error
+	}	
+	if result.RowsAffected==0{
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (r *OrderRepo) UpdateRazorpayOrderID(orderID uint, razorpayOrderID string) error {
 	return r.db.
 		Model(&models.Order{}).
 		Where("id = ?", orderID).
-		Update("status", status).
+		Update("razorpay_order_id", razorpayOrderID).
 		Error
 }
+
+func (r *OrderRepo) UpdatePaymentSuccess(orderID uint, paymentID string) error {
+	return r.db.Model(&models.Order{}).
+		Where("id = ?", orderID).
+		Updates(map[string]interface{}{
+			"razorpay_payment_id": paymentID,
+			"payment_status":      "paid",
+			"status":              "paid",
+		}).Error
+}
+
+
 
 
 

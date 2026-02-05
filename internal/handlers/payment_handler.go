@@ -1,0 +1,39 @@
+package handlers
+
+import (
+	"net/http"
+	"strconv"
+
+	"ecommerce_project/internal/service"
+	"github.com/gin-gonic/gin"
+)
+
+type PaymentHandler struct {
+	paymentService *service.PaymentService
+}
+
+func NewPaymentHandler(ps *service.PaymentService) *PaymentHandler {
+	return &PaymentHandler{paymentService: ps}
+}
+
+func (h *PaymentHandler) CreateRazorpayOrder(c *gin.Context) {
+	orderIDStr := c.Param("order_id")
+	orderIDInt, err := strconv.Atoi(orderIDStr)
+	if err != nil || orderIDInt <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid order_id"})
+		return
+	}
+
+	razorpayOrderID, amount, keyID, err := h.paymentService.CreateRazorPayOrder(uint(orderIDInt))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"key_id":            keyID,
+		"razorpay_order_id": razorpayOrderID,
+		"amount":            amount,
+		"currency":          "INR",
+	})
+}
