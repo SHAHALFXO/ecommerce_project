@@ -1,9 +1,13 @@
 package service
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"ecommerce_project/internal/repo"
+	"encoding/hex"
 	"os"
 	"strconv"
+	"errors"
 
 	"github.com/razorpay/razorpay-go"
 )
@@ -49,8 +53,25 @@ func (s *PaymentService) CreateRazorPayOrder(orderID uint) (string, int, string,
 	if err != nil {
 		return "", 0, "", err
 	}
-
 	return razorpayOrderID, amount, s.keyID, nil
 
 }
+
+func (s *PaymentService) VerifyRazorpayPayment(orderID uint, razorpayOrderID, razorpayPaymentID, razorpaySignature string) error {
+	secret := os.Getenv("RAZORPAY_KEY_SECRET")
+
+	data := razorpayOrderID + "|" + razorpayPaymentID
+
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write([]byte(data))
+	expectedSignature := hex.EncodeToString(h.Sum(nil))
+
+	if expectedSignature != razorpaySignature {
+		return errors.New("invalid payment signature")
+	}
+
+	
+	return s.orderRepo.UpdatePaymentSuccess(orderID, razorpayPaymentID)
+}
+
 

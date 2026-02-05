@@ -37,3 +37,31 @@ func (h *PaymentHandler) CreateRazorpayOrder(c *gin.Context) {
 		"currency":          "INR",
 	})
 }
+
+func (h *PaymentHandler) VerifyRazorpayPayment(c *gin.Context) {
+	var req struct {
+		OrderID           uint   `json:"order_id"`
+		RazorpayOrderID   string `json:"razorpay_order_id"`
+		RazorpayPaymentID string `json:"razorpay_payment_id"`
+		RazorpaySignature string `json:"razorpay_signature"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	err := h.paymentService.VerifyRazorpayPayment(
+		req.OrderID,
+		req.RazorpayOrderID,
+		req.RazorpayPaymentID,
+		req.RazorpaySignature,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "payment verified successfully"})
+}

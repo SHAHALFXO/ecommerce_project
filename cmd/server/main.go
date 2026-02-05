@@ -108,7 +108,8 @@ func main() {
 	payment.Use(middleware.AuthMiddleware())
 
 	payment.POST("/razorpay/order/:order_id", paymentHandler.CreateRazorpayOrder)
-	
+	payment.POST("/razorpay/verify", paymentHandler.VerifyRazorpayPayment)
+
 
 	port := os.Getenv("PORT")
 	if port == "" {
