@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vintage 1950 | Timeless Fashion</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f9f5f0;
+      font-family: 'Cormorant Garamond', serif;
+      color: #4a3728;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: #8b6f47;
+    }
+
+    .navbar-brand {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: white;
+    }
+
+    /* HERO */
+    .hero {
+      padding: 80px 0;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: bold;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      max-width: 500px;
+    }
+
+    .btn-start {
+      background: #b03a2e;
+      color: white;
+      padding: 14px 36px;
+      border-radius: 40px;
+      font-size: 1.1rem;
+    }
+
+    .btn-start:hover {
+      background: #922b21;
+      color: white;
+    }
+
+    .hero-img {
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    /* FEATURES */
+    .feature-box {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      height: 100%;
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+    }
+
+    /* PRODUCTS */
+    .card {
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    footer {
+      background: #8b6f47;
+      color: white;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark px-4">
+  <span class="navbar-brand">Vintage 1950</span>
+  <div>
+    <a href="/frontend/login.html" class="btn btn-outline-light me-2">Login</a>
+    <a href="/frontend/profile.html" class="btn btn-outline-light me-2">My Profile</a>
+    <a href="/frontend/cart.html" class="btn btn-outline-light">Cart</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero container">
+  <div class="row align-items-center">
+    <div class="col-md-6">
+      <h1>Timeless Vintage Fashion</h1>
+      <p class="mt-3">
+        Experience classic 1950s-inspired clothing crafted with elegance,
+        quality, and heritage.
+      </p>
+      <a href="/frontend/products.html" class="btn btn-start mt-3">
+        Start Shopping
+      </a>
+    </div>
+    <div class="col-md-6 text-center">
+      <img
+        src="https://images.unsplash.com/photo-1520975916090-3105956dac38"
+        class="img-fluid hero-img"
+        alt="Vintage Clothing"
+      />
+    </div>
+  </div>
+</section>
+
+<!-- WHY CHOOSE US -->
+<section class="container py-5">
+  <h3 class="text-center mb-5">Why Choose Vintage 1950?</h3>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="feature-box text-center">
+        <div class="feature-icon">🚚</div>
+        <h5 class="mt-3">Fast Delivery</h5>
+        <p>Quick and reliable shipping across the country.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-box text-center">
+        <div class="feature-icon">🎧</div>
+        <h5 class="mt-3">24×7 Support</h5>
+        <p>Our customer care is always ready to help you.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-box text-center">
+        <div class="feature-icon">👔</div>
+        <h5 class="mt-3">Premium Quality</h5>
+        <p>Carefully curated vintage collections with top quality.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DYNAMIC PRODUCTS -->
+<section class="container pb-5">
+  <h3 class="text-center mb-4">Latest Products</h3>
+  <div class="row" id="homeProducts">
+    <p class="text-center">Loading products...</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="text-center">
+  <p class="mb-0">© 2026 Vintage 1950 · Crafted with Heritage</p>
+</footer>
+
+<!-- SCRIPT -->
+<script>
+const API_BASE = "http://localhost:8080";
+const container = document.getElementById("homeProducts");
+
+fetch(`${API_BASE}/products`)
+  .then(res => res.json())
+  .then(products => {
+    container.innerHTML = "";
+
+    if (products.length === 0) {
+      container.innerHTML = "<p class='text-center'>No products available</p>";
+      return;
+    }
+
+    products.slice(0, 6).forEach(p => {
+      container.innerHTML += `
+        <div class="col-md-4 mb-4">
+          <div class="card shadow h-100">
+            <img src="${API_BASE}${p.image_url}"
+                 class="card-img-top"
+                 style="height:240px;object-fit:cover">
+            <div class="card-body text-center">
+              <h6>${p.name}</h6>
+              <p class="text-muted">₹${p.price}</p>
+              <a href="/frontend/products.html"
+                 class="btn btn-sm btn-dark">
+                View Product
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  })
+  .catch(() => {
+    container.innerHTML =
+      "<p class='text-center text-danger'>Failed to load products</p>";
+  });
+</script>
+
+</body>
+</html>

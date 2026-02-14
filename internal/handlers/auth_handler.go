@@ -1,10 +1,17 @@
 package handlers
 
 import (
+	"ecommerce_project/internal/db"
+	"ecommerce_project/internal/models"
 	"ecommerce_project/internal/service"
+	"ecommerce_project/internal/utils"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
@@ -66,3 +73,77 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
+
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+
+	var body struct {
+		Email string `json:"email"`
+	}
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": "invalid request"})
+		return
+	}
+
+	var user models.User
+	err := db.DB.Where("email = ?", body.Email).First(&user).Error
+
+	if err == nil {
+		token := uuid.NewString()
+		expiry := time.Now().Add(15 * time.Minute)
+
+		db.DB.Model(&user).Updates(map[string]interface{}{
+			"reset_token": token,
+			"reset_token_expiry": expiry,
+		})
+
+		resetLink := "http://localhost:8080/frontend/reset-password.html?token=" + token
+
+		err=utils.SendResetEmail(user.Email, resetLink)
+		if err!=nil{
+			log.Println("error sending email",err)
+		}else{
+			log.Println("email sent succesfully")
+		}
+
+
+	}
+
+	c.JSON(200, gin.H{"msg": "if email exists, reset link sent"})
+}
+
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+
+	var body struct {
+		Token       string `json:"token"`
+		NewPassword string `json:"new_password"`
+	}
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": "invalid request"})
+		return
+	}
+
+	var user models.User
+	err := db.DB.Where("reset_token = ?", body.Token).First(&user).Error
+
+	if err != nil || time.Now().After(*user.ResetTokenExpiry) {
+		c.JSON(400, gin.H{"error": "invalid or expired token"})
+		return
+	}
+
+	hashed, _ := bcrypt.GenerateFromPassword(
+		[]byte(body.NewPassword),
+		bcrypt.DefaultCost,
+	)
+
+	db.DB.Model(&user).Updates(map[string]interface{}{
+		"password_hash": hashed,
+		"reset_token": "",
+		"reset_token_expiry": nil,
+	})
+
+	c.JSON(200, gin.H{"msg": "password updated successfully"})
+}
+
+

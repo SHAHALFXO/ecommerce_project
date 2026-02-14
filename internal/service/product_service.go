@@ -51,6 +51,12 @@ func (s *ProductService) CreateProduct(p *models.Product) error {
 
 	return s.productRepo.CreateProduct(p)
 }
+
+func (s *ProductService) BulkCreateProducts(products []models.Product) error {
+	return s.productRepo.BulkCreate(products)
+}
+
+
 func (s *ProductService) UpdateProduct(p *models.Product) error {
 	if p.ID == 0 {
 		return errors.New("invalid product id")

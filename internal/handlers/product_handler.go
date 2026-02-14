@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"ecommerce_project/internal/db"
 	"ecommerce_project/internal/models"
 	"ecommerce_project/internal/service"
-	
+	"path"
+
 	"net/http"
 	"strconv"
-
 
 	"github.com/gin-gonic/gin"
 )
@@ -86,6 +87,62 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"msg": "product created","product":product})
 
 }
+
+func (h *ProductHandler) BulkCreate(c *gin.Context) {
+
+	var products []models.Product
+
+	if err := c.ShouldBindJSON(&products); err != nil {
+		c.JSON(400, gin.H{"error": "invalid data"})
+		return
+	}
+
+	if err := h.service.BulkCreateProducts(products); err != nil {
+		c.JSON(500, gin.H{"error": "failed to create products"})
+		return
+	}
+
+	c.JSON(201, gin.H{"msg": "products created"})
+}
+
+
+
+func (h *ProductHandler) UploadImage(c *gin.Context) {
+
+	productID := c.Param("id")
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(400, gin.H{"error": "image required"})
+		return
+	}
+
+	filename := "product_" + productID + path.Ext(file.Filename)
+	savePath := "uploads/products/" + filename
+
+	if err := c.SaveUploadedFile(file, savePath); err != nil {
+		c.JSON(500, gin.H{"error": "cannot save image"})
+		return
+	}
+
+	imageURL := "/" + savePath
+
+	err = db.DB.Model(&models.Product{}).
+		Where("id = ?", productID).
+		Update("image_url", imageURL).Error
+
+	if err != nil {
+		c.JSON(500, gin.H{"error": "db update failed"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"msg":       "image uploaded",
+		"image_url": imageURL,
+	})
+}
+
+
 func (h *ProductHandler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
 

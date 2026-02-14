@@ -18,6 +18,11 @@ func (r *ProductRepo) CreateProduct(product *models.Product) error {
 	return r.db.Create(product).Error
 }
 
+func (r *ProductRepo) BulkCreate(products []models.Product) error {
+	return r.db.Create(&products).Error
+}
+
+
 func (r *ProductRepo) GetProductByID(id uint) (*models.Product, error) {
 	var product models.Product
 	err := r.db.First(&product, id).Error

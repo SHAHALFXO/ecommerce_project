@@ -61,8 +61,13 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}
+	r.Static("/uploads", "./uploads")
+	r.Static("/frontend", "./frontend")
+
 
 	r.Use(cors.New(config))
+
+	r.POST("/products/:id/image", productHandler.UploadImage)
 
 	r.POST("/auth/signup", authHandler.Signup)
 	r.POST("/auth/login", authHandler.Login)
@@ -74,17 +79,20 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	r.POST("/auth/forgot-password", authHandler.ForgotPassword)
+	r.POST("/auth/reset-password", authHandler.ResetPassword)
+
 	authGroup := r.Group("/me")
 	authGroup.Use(middleware.AuthMiddleware())
 	authGroup.GET("/profile", userHandler.Profile)
 
 	adminGroup := r.Group("/admin")
 	adminGroup.Use(middleware.AuthMiddleware(), middleware.AdminOnly())
-	adminGroup.GET("/products", func(c *gin.Context) {
-		c.JSON(200, gin.H{"msg": "admin products route ok"})
-	})
+	adminGroup.GET("/products",productHandler.List)
+	
 
 	adminGroup.POST("/products", productHandler.Create)
+	adminGroup.POST("/products/bulk", productHandler.BulkCreate)
 	adminGroup.DELETE("/products", productHandler.Delete)
 
 	cart := r.Group("/cart")
@@ -109,7 +117,6 @@ func main() {
 
 	payment.POST("/razorpay/order/:order_id", paymentHandler.CreateRazorpayOrder)
 	payment.POST("/razorpay/verify", paymentHandler.VerifyRazorpayPayment)
-
 
 	port := os.Getenv("PORT")
 	if port == "" {
