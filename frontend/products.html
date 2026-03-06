@@ -13,49 +13,67 @@
       font-family: 'Cormorant Garamond', serif;
       color: #4a3728;
     }
+
     .navbar {
       background: #8b6f47;
     }
-    .logo {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      color: white;
-    }
+
     .card {
-      border: 2px solid #d4c2a8;
-      border-radius: 15px;
+      border-radius: 16px;
+      border: 1px solid #e2d6c3;
+      transition: transform 0.2s ease;
     }
+
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .product-img {
+      height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+
+    .price {
+      font-weight: bold;
+      color: #8b6f47;
+    }
+
     .btn-vintage {
       background: #8b6f47;
       color: white;
-      border-radius: 30px;
+      border-radius: 25px;
+      padding: 6px 20px;
+      font-size: 14px;
     }
+
     .btn-vintage:hover {
       background: #a5855a;
+      color: white;
+    }
+
+    .desc {
+      font-size: 14px;
+      color: #6b5a4a;
     }
   </style>
 </head>
 <body>
 
-<script>
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "index.html";
-  }
-</script>
-
+<!-- NAVBAR -->
 <nav class="navbar navbar-dark px-4">
-  <span class="logo">Vintage 1950</span>
+  <a href="/frontend/index.html" class="navbar-brand">Vintage 1950</a>
   <div>
-    <a href="profile.html" class="btn btn-outline-light me-2">Profile</a>
-    <a href="cart.html" class="btn btn-outline-light">Cart</a>
+    <a href="/frontend/index.html" class="btn btn-outline-light me-2">Home</a>
+    <a href="/frontend/cart.html" class="btn btn-outline-light">Cart</a>
   </div>
 </nav>
 
-<div class="container mt-5">
-  <h2 class="text-center mb-4">Our Vintage Collections</h2>
+<!-- PRODUCTS -->
+<div class="container py-5">
+  <h3 class="text-center mb-4">Our Collection</h3>
 
-  <div class="row" id="productList">
+  <div class="row g-4" id="productList">
     <div class="text-center">
       <div class="spinner-border text-muted"></div>
     </div>
@@ -66,60 +84,49 @@
 const API_BASE = "http://localhost:8080";
 const productList = document.getElementById("productList");
 
-fetch(`${API_BASE}/products`, {
-  headers: {
-    "Authorization": "Bearer " + token
-  }
-})
-.then(res => {
-  if (!res.ok) throw new Error("Failed to load products");
-  return res.json();
-})
-.then(data => {
-    console.log(data)
+fetch(`${API_BASE}/products`)
+  .then(res => res.json())
+  .then(products => {
+    productList.innerHTML = "";
 
-  productList.innerHTML = "";
+    products.forEach(p => {
+      productList.innerHTML += `
+        <div class="col-md-3 col-sm-6">
+          <div class="card p-3 h-100 shadow-sm">
+            <a href="/frontend/product-details.html?id=${p.id}">
+              <img src="${API_BASE}${p.image_url}" class="product-img mb-3">
+              </a>
+            <h6 class="mb-1">${p.name}</h6>
+            <div class="price mb-2">₹${p.price}</div>
 
-  data.forEach(product => {
+            <p class="desc">
+              ${p.description.length > 70 
+                ? p.description.substring(0, 70) + "..." 
+                : p.description}
+            </p>
 
-    productList.innerHTML += `
-  <div class="col-md-4 mb-4">
-    <div class="card p-3 shadow h-100">
-      <img 
-        src="${API_BASE}${product.image_url}" 
-        class="img-fluid mb-3 rounded"
-        alt="${product.name}"
-      />
-      <h5>${product.name}</h5>
-      <p class="text-muted">₹${product.price}</p>
-      <button class="btn btn-vintage mt-auto"
-        onclick="addToCart(${product.id})">
-        Add to Cart
-      </button>
-    </div>
-  </div>
-`;
-
+            <button class="btn btn-vintage mt-auto"
+              onclick="addToCart(${p.id})">
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      `;
+    });
+  })
+  .catch(() => {
+    productList.innerHTML =
+      "<p class='text-center text-danger'>Failed to load products</p>";
   });
-})
-.catch(err => {
-  productList.innerHTML = `<p class="text-center text-danger">${err.message}</p>`;
-});
 
 function addToCart(productID) {
   fetch(`${API_BASE}/cart/add?product_id=${productID}`, {
     method: "POST",
     headers: {
-      "Authorization": "Bearer " + token
+      "Authorization": "Bearer " + localStorage.getItem("token")
     }
   })
-  .then(res => res.json())
-  .then(data => {
-    alert("Added to cart");
-  })
-  .catch(() => {
-    alert("Failed to add item");
-  });
+  .then(() => alert("Added to cart"));
 }
 </script>
 

@@ -20,7 +20,16 @@ func (h *OrderHandler) PlaceOrder(c *gin.Context) {
 
 	userID := c.MustGet("user_id").(uint)
 
-	order, err := h.orderService.PlaceOrder(userID)
+	var req struct {
+		AddressID uint `json:"address_id"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	order, err := h.orderService.PlaceOrder(userID,req.AddressID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

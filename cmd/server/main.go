@@ -8,9 +8,10 @@ import (
 	"ecommerce_project/internal/repo"
 	"ecommerce_project/internal/service"
 	"fmt"
-	"github.com/gin-contrib/cors"
 	"os"
 	"time"
+
+	"github.com/gin-contrib/cors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -27,12 +28,23 @@ func main() {
 	db.DB.AutoMigrate(&models.User{})
 	db.DB.AutoMigrate(&models.Product{})
 	db.DB.AutoMigrate(&models.Cart{}, &models.CartItem{})
-	db.DB.AutoMigrate(&models.Order{}, &models.OrderItem{})
+	db.DB.AutoMigrate(
+		&models.Order{},
+		&models.OrderItem{},
+		&models.UserAddress{},
+	)
+	fmt.Println("Running migration")
 
 	userRepo := repo.NewUserRepo(db.DB)
 	authSvc := service.NewAuthService(userRepo)
 	authHandler := handlers.NewAuthHandler(authSvc)
 	userHandler := handlers.NewUserHandler(userRepo)
+
+	addressRepo := repo.NewAddressRepo(db.DB)
+	addressService := service.NewAddressService(addressRepo)
+	addressHandler := handlers.NewAddressHandler(addressService)
+
+	
 
 	productRepo := repo.NewProductRepo(db.DB)
 	productsvc := service.NewProductService(productRepo)
@@ -64,7 +76,6 @@ func main() {
 	r.Static("/uploads", "./uploads")
 	r.Static("/frontend", "./frontend")
 
-
 	r.Use(cors.New(config))
 
 	r.POST("/products/:id/image", productHandler.UploadImage)
@@ -88,8 +99,7 @@ func main() {
 
 	adminGroup := r.Group("/admin")
 	adminGroup.Use(middleware.AuthMiddleware(), middleware.AdminOnly())
-	adminGroup.GET("/products",productHandler.List)
-	
+	adminGroup.GET("/products", productHandler.List)
 
 	adminGroup.POST("/products", productHandler.Create)
 	adminGroup.POST("/products/bulk", productHandler.BulkCreate)
@@ -102,6 +112,7 @@ func main() {
 	cart.GET("", cartHandler.GetCart)
 	cart.DELETE("/item/:product_id", cartHandler.RemoveItem)
 	cart.DELETE("/clear", cartHandler.ClearCart)
+	cart.PATCH("/item/:product_id", cartHandler.UpdateQuantity)
 
 	adminGroup.GET("/orders", orderHandler.GetAllOrders)
 	adminGroup.PATCH("/update/:order_id/:status", orderHandler.UpdateOrderStatus)
@@ -117,7 +128,14 @@ func main() {
 
 	payment.POST("/razorpay/order/:order_id", paymentHandler.CreateRazorpayOrder)
 	payment.POST("/razorpay/verify", paymentHandler.VerifyRazorpayPayment)
+   
+	address := r.Group("/addresses")
+	address.Use(middleware.AuthMiddleware())
 
+	address.POST("/add", addressHandler.AddAddress)
+	address.GET("/get", addressHandler.GetMyAddresses)
+	address.PUT("/edit/:address_id", addressHandler.EditAddress)
+	
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

@@ -17,7 +17,7 @@ func NewOrderService(or *repo.OrderRepo, cr *repo.CartRepo, cir *repo.CartItemRe
 	return &OrderService{OrderRepo: or, CartRepo: cr, CartItemRepo: cir, ProductRepo: pr}
 }
 
-func(s *OrderService) PlaceOrder(UserId uint) (*models.Order, error) {
+func (s *OrderService) PlaceOrder(UserId uint, addressID uint) (*models.Order, error) {
 
 	cart, err := s.CartRepo.GetOrCreateCart(UserId)
 
@@ -42,6 +42,10 @@ func(s *OrderService) PlaceOrder(UserId uint) (*models.Order, error) {
 			return nil, err
 		}
 
+		if product.Stock < int(item.Quantity) {
+			return nil, errors.New("product out of stock")
+		}
+
 		price := product.Price
 
 		total += price * float64(item.Quantity)
@@ -54,9 +58,10 @@ func(s *OrderService) PlaceOrder(UserId uint) (*models.Order, error) {
 
 	}
 	order := models.Order{
-		UserID: UserId,
-		Status: "pending",
-		Total:  total,
+		UserID:    UserId,
+		AddressID: addressID,
+		Status:    "pending",
+		Total:     total,
 	}
 
 	if err := s.OrderRepo.CreateOrder(&order); err != nil {
@@ -69,6 +74,13 @@ func(s *OrderService) PlaceOrder(UserId uint) (*models.Order, error) {
 
 	if err := s.OrderRepo.CreateOrderItems(orderItems); err != nil {
 		return nil, err
+	}
+
+	for _, item := range items {
+		err := s.ProductRepo.ReduceStock(item.ProductID, uint(item.Quantity))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err := s.CartItemRepo.ClearCartItems(cart.ID); err != nil {
@@ -87,16 +99,16 @@ func (s *OrderService) GetMyOrders(UserID uint) ([]models.Order, error) {
 	return Orders, nil
 }
 
-func (s *OrderService) GetOrderDetails(UserID,OrderID uint,role string) (*models.Order, error) {
+func (s *OrderService) GetOrderDetails(UserID, OrderID uint, role string) (*models.Order, error) {
 	order, err := s.OrderRepo.GetOrderByID(OrderID)
-     if err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	if order.UserID!=UserID && role!="admin"{
-		return nil,errors.New("forbidden")
+	if order.UserID != UserID && role != "admin" {
+		return nil, errors.New("forbidden")
 	}
-	
+
 	return order, nil
 }
 

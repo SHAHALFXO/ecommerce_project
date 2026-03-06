@@ -48,3 +48,11 @@ func (r *ProductRepo) UpdateProduct(p *models.Product) error {
 func (r *ProductRepo)DeleteProduct(id uint)error{
 	return r.db.Delete(&models.Product{},id).Error
 }
+
+func (r *ProductRepo) ReduceStock(productID uint, qty uint) error {
+	return r.db.
+		Model(&models.Product{}).
+		Where("id = ?", productID).
+		Update("stock", gorm.Expr("stock - ?", qty)).
+		Error
+}

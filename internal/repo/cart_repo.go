@@ -56,3 +56,12 @@ func (r *CartRepo) DeleteCart(cartID uint) error {
         Delete(&models.Cart{}).
         Error
 }
+
+func (r *CartItemRepo) UpdateQuantity(cartID, productID uint, qty int) error {
+
+	return r.db.
+		Model(&models.CartItem{}).
+		Where("cart_id = ? AND product_id = ?", cartID, productID).
+		Update("quantity", qty).
+		Error
+}

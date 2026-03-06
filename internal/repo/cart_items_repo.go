@@ -39,7 +39,7 @@ func (r *CartItemRepo) AddOrUpdateItem(cartID, productID uint) error {
 
 func (r *CartItemRepo) GetCartItems(cart_id uint) ([]models.CartItem, error) {
 	var items []models.CartItem
-	err := r.db.Where("cart_id=?", cart_id).Find(&items).Error
+	err := r.db.Where("cart_id=?", cart_id).Preload("Product").Find(&items).Error
 
 	if err != nil {
 		return nil, err

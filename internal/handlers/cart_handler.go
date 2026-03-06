@@ -83,3 +83,25 @@ func (h *CartHandler) ClearCart(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "cart cleared"})
 }
+
+func (h *CartHandler) UpdateQuantity(c *gin.Context) {
+
+	userID := c.MustGet("user_id").(uint)
+
+	productIDStr := c.Param("product_id")
+	productIDInt, _ := strconv.Atoi(productIDStr)
+
+	var req struct {
+		Quantity int `json:"quantity"`
+	}
+
+	c.ShouldBindJSON(&req)
+
+	err := h.cartService.UpdateQuantity(userID, uint(productIDInt), req.Quantity)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "quantity updated"})
+}

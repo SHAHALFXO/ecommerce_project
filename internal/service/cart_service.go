@@ -57,3 +57,13 @@ func (s *CartService) ClearCart(userID uint) error {
 
 	return s.cartItemRepo.ClearCartItems(cart.ID)
 }
+
+func (s *CartService) UpdateQuantity(userID, productID uint, qty int) error {
+
+	cart, err := s.cartRepo.GetOrCreateCart(userID)
+	if err != nil {
+		return err
+	}
+
+	return s.cartItemRepo.UpdateQuantity(cart.ID, productID, qty)
+}
