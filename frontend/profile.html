@@ -1,72 +1,328 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Vintage 1950 - Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    body { background: #f9f5f0; font-family: 'Cormorant Garamond', serif; color: #4a3728; }
-    .navbar { background: #8b6f47; }
-    .logo { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: white; }
-    .card { border: 2px solid #d4c2a8; border-radius: 15px; }
-  </style>
+<meta charset="UTF-8">
+<title>My Account | Vintage 1950</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+body{
+background:#f5f5f5;
+font-family:Arial, Helvetica, sans-serif;
+}
+
+.navbar{
+background:#131921;
+}
+
+.logo{
+color:white;
+font-weight:bold;
+font-size:22px;
+}
+
+.main{
+display:flex;
+min-height:90vh;
+}
+
+.sidebar{
+width:240px;
+background:white;
+border-right:1px solid #ddd;
+padding:20px;
+}
+
+.sidebar h6{
+font-weight:bold;
+margin-bottom:15px;
+}
+
+.menu-btn{
+display:block;
+width:100%;
+border:none;
+background:white;
+padding:10px;
+text-align:left;
+border-radius:6px;
+margin-bottom:5px;
+}
+
+.menu-btn:hover{
+background:#f1f1f1;
+}
+
+.content{
+flex:1;
+padding:25px;
+}
+
+.card-box{
+background:white;
+padding:20px;
+border-radius:8px;
+border:1px solid #ddd;
+margin-bottom:20px;
+}
+
+.dash-card{
+background:white;
+border:1px solid #ddd;
+border-radius:10px;
+padding:20px;
+text-align:center;
+cursor:pointer;
+transition:0.2s;
+}
+
+.dash-card:hover{
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+}
+
+</style>
+
 </head>
 <body>
-  <nav class="navbar navbar-dark">
-    <div class="container-fluid">
-      <span class="logo">Vintage 1950</span>
-      <button class="btn btn-outline-light" onclick="logout()">Logout</button>
-    </div>
-  </nav>
 
-  <div class="container mt-5" id="content">
-    <div class="text-center">
-      <div class="spinner-border text-muted" role="status"><span class="visually-hidden">Loading...</span></div>
-    </div>
-  </div>
 
-  <script>
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "index.html";
-    }
+<script>
 
-    fetch("http://localhost:8080/me/profile", {
-      headers: { "Authorization": "Bearer " + token }
-    })
-    .then(res => {
-      if (!res.ok) throw new Error();
-      return res.json();
-    })
-    .then(data => {
-      document.getElementById("content").innerHTML = `
-        <div class="text-center">
-          <h1>Welcome back!</h1>
-          <div class="card p-5 mt-4 shadow">
-            <h3>Hello, ${data.User.email}</h3>
-            <p class="lead">User ID: ${data.User.id} <br> Role: ${data.User.role}</p>
-            <hr>
-            <h4>Your exclusive vintage collection awaits...</h4>
-            <a href="products.html">
-            <button class="btn btn-lg mt-3" style="background:#8b6f47;color:white;border-radius:50px;padding:15px 40px;">
-              Start Shopping
-            </button>
-            </a>
-          </div>
-        </div>`;
-    })
-    .catch(() => {
-      alert("Session expired or invalid");
-      localStorage.removeItem("token");
-      window.location.href = "index.html";
-    });
+const API="http://localhost:8080"
 
-    function logout() {
-      localStorage.removeItem("token");
-      window.location.href = "index.html";
-    }
-  </script>
+async function verifyUser(){
+
+const token=localStorage.getItem("token")
+
+if(!token){
+logout()
+return
+}
+
+try{
+
+const res=await fetch(
+API+"/me/profile",
+{
+headers:{
+Authorization:"Bearer "+token
+}
+})
+
+if(!res.ok){
+logout()
+}
+
+}catch(e){
+logout()
+}
+
+}
+
+function logout(){
+localStorage.removeItem("token")
+location.href="index.html"
+}
+
+verifyUser()
+
+</script>
+
+
+<!-- NAVBAR -->
+
+<nav class="navbar px-4">
+
+<span class="logo">Vintage 1950</span>
+
+<div>
+
+<a href="index.html" class="btn btn-outline-light btn-sm me-2">
+Home
+</a>
+
+<a href="products.html" class="btn btn-outline-light btn-sm me-2">
+Products
+</a>
+
+<a href="cart.html" class="btn btn-outline-light btn-sm me-2">
+Cart
+</a>
+
+<button class="btn btn-warning btn-sm"
+onclick="logout()">
+Logout
+</button>
+
+</div>
+
+</nav>
+
+
+
+<div class="main">
+
+
+<div class="sidebar">
+
+<h6>MY ACCOUNT</h6>
+
+<button class="menu-btn" onclick="showProfile()">
+Profile
+</button>
+
+<button class="menu-btn" onclick="goOrders()">
+My Orders
+</button>
+
+<button class="menu-btn" onclick="goCart()">
+Cart
+</button>
+
+<button class="menu-btn" onclick="goProducts()">
+Shop
+</button>
+
+<button class="menu-btn" onclick="logout()">
+Logout
+</button>
+
+</div>
+
+
+
+<div class="content">
+
+<div id="content">
+Loading...
+</div>
+
+</div>
+
+</div>
+
+
+
+<script>
+
+
+function goOrders(){
+location.href="orders.html"
+}
+
+function goCart(){
+location.href="cart.html"
+}
+
+function goProducts(){
+location.href="products.html"
+}
+
+
+
+async function showProfile(){
+
+const token=localStorage.getItem("token")
+
+try{
+
+const res=await fetch(API+"/me/profile",{
+headers:{
+Authorization:"Bearer "+token
+}
+})
+
+if(!res.ok){
+logout()
+return
+}
+
+const data=await res.json()
+
+document.getElementById("content").innerHTML=`
+
+<div class="card-box">
+
+<h4>Hello, ${data.User.email}</h4>
+
+<p>User ID: ${data.User.id}</p>
+
+<p>Role: ${data.User.role}</p>
+
+</div>
+
+
+<div class="row g-3">
+
+<div class="col-md-3">
+
+<div class="dash-card"
+onclick="goOrders()">
+
+<h5>Orders</h5>
+<p>View your orders</p>
+
+</div>
+
+</div>
+
+
+<div class="col-md-3">
+
+<div class="dash-card"
+onclick="goCart()">
+
+<h5>Cart</h5>
+<p>Your cart items</p>
+
+</div>
+
+</div>
+
+
+<div class="col-md-3">
+
+<div class="dash-card"
+onclick="goProducts()">
+
+<h5>Shop</h5>
+<p>Buy products</p>
+
+</div>
+
+</div>
+
+
+<div class="col-md-3">
+
+<div class="dash-card"
+onclick="location.href='add_address.html'">
+
+<h5>Address</h5>
+<p>Add address</p>
+
+</div>
+
+</div>
+
+</div>
+
+`
+
+}catch(e){
+
+logout()
+
+}
+
+}
+
+
+showProfile()
+
+</script>
+
 </body>
 </html>

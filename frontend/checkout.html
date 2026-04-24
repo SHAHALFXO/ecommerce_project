@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<title>Checkout</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+body{
+background:#f9f5f0;
+font-family:'Cormorant Garamond',serif;
+}
+
+.navbar{
+background:#8b6f47;
+}
+
+.logo{
+font-family:'Playfair Display',serif;
+font-size:2rem;
+color:white;
+}
+
+.btn-vintage{
+background:#8b6f47;
+color:white;
+border-radius:30px;
+}
+
+.address-card{
+border:2px solid #d4c2a8;
+padding:15px;
+border-radius:10px;
+margin-bottom:10px;
+}
+
+.selected{
+border:2px solid #8b6f47;
+background:#fff9f2;
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<script>
+
+const API="http://localhost:8080"
+
+async function verifyUser(){
+
+const token=localStorage.getItem("token")
+
+if(!token){
+logout()
+return
+}
+
+try{
+
+const res=await fetch(
+API+"/me/profile",
+{
+headers:{
+Authorization:"Bearer "+token
+}
+})
+
+if(!res.ok){
+logout()
+}
+
+}catch(e){
+logout()
+}
+
+}
+
+function logout(){
+localStorage.removeItem("token")
+window.location.href="index.html"
+}
+
+verifyUser()
+
+</script>
+
+
+<nav class="navbar navbar-dark px-4">
+
+<span class="logo">Vintage 1950</span>
+
+<div>
+<a href="cart.html" class="btn btn-outline-light">Cart</a>
+</div>
+
+</nav>
+
+
+
+<div class="container mt-3">
+<div id="alertBox"></div>
+</div>
+
+
+
+<div class="container mt-5">
+
+<h2>Select Delivery Address</h2>
+
+<a href="add_address.html"
+class="btn btn-dark mb-3">
+
+Add New Address
+
+</a>
+
+<div id="addressList"></div>
+
+<button
+id="placeBtn"
+type="button"
+class="btn btn-vintage mt-4"
+onclick="placeOrder()">
+
+Place Order
+
+</button>
+
+</div>
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+
+<script>
+
+const token=localStorage.getItem("token")
+
+let selectedAddress=null
+let placingOrder=false
+
+
+
+function showAlert(msg,type="danger"){
+
+const box=document.getElementById("alertBox")
+
+box.innerHTML=`
+<div class="alert alert-${type} alert-dismissible fade show">
+${msg}
+<button type="button"
+class="btn-close"
+data-bs-dismiss="alert">
+</button>
+</div>
+`
+}
+
+
+
+async function loadAddresses(){
+
+try{
+
+const res=await fetch(API+"/addresses/get",{
+headers:{
+Authorization:"Bearer "+token
+}
+})
+
+if(!res.ok){
+logout()
+return
+}
+
+const data=await res.json()
+
+const addresses=data.addresses || data.data || []
+
+const container=document.getElementById("addressList")
+
+container.innerHTML=""
+
+addresses.forEach(addr=>{
+
+container.innerHTML+=`
+
+<div class="address-card">
+
+<div onclick="selectAddress(${addr.ID}, this)">
+
+${addr.Address1}<br>
+${addr.City}, ${addr.State}<br>
+${addr.Pincode}
+
+</div>
+
+<div style="margin-top:8px">
+
+<button
+class="btn btn-sm btn-outline-dark"
+onclick="editAddress(${addr.ID})">
+
+Edit
+
+</button>
+
+</div>
+
+</div>
+
+`
+
+})
+
+}catch(e){
+
+logout()
+
+}
+
+}
+
+
+
+function editAddress(id){
+window.location.href="edit_address.html?id="+id
+}
+
+
+
+function selectAddress(id,el){
+
+selectedAddress=id
+
+document.querySelectorAll(".address-card")
+.forEach(c=>c.classList.remove("selected"))
+
+el.closest(".address-card")
+.classList.add("selected")
+
+}
+
+
+
+async function placeOrder(){
+
+if(placingOrder) return
+
+if(!selectedAddress){
+showAlert("Select address first","warning")
+return
+}
+
+placingOrder=true
+
+const btn=document.getElementById("placeBtn")
+btn.disabled=true
+
+try{
+
+const res=await fetch(API+"/orders/place",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+address_id:selectedAddress
+})
+
+})
+
+if(!res.ok){
+logout()
+return
+}
+
+const data=await res.json()
+
+if (!data.order) {
+
+showAlert("Order failed","danger")
+
+placingOrder=false
+btn.disabled=false
+return
+}
+
+const orderID=data.order.ID||data.order.id
+
+startPayment(orderID)
+
+}catch(e){
+
+showAlert("Order error","danger")
+
+placingOrder=false
+btn.disabled=false
+
+}
+
+}
+
+
+
+async function startPayment(orderID){
+
+try{
+
+const res=await fetch(
+API+"/payments/razorpay/order/"+orderID,
+{
+method:"POST",
+headers:{
+Authorization:"Bearer "+token
+}
+})
+
+if(!res.ok){
+logout()
+return
+}
+
+const data=await res.json()
+
+if(!data.key_id){
+showAlert("Payment error","danger")
+return
+}
+
+const options={
+
+key:data.key_id,
+amount:data.amount,
+currency:data.currency,
+order_id:data.razorpay_order_id,
+
+handler:async function(response){
+
+await verifyPayment(orderID,response)
+
+}
+
+}
+
+const rzp=new Razorpay(options)
+
+rzp.open()
+
+}catch(e){
+
+showAlert("Payment error","danger")
+
+}
+
+}
+
+
+
+async function verifyPayment(orderID,res){
+
+await fetch(API+"/payments/razorpay/verify",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+
+order_id:orderID,
+razorpay_order_id:res.razorpay_order_id,
+razorpay_payment_id:res.razorpay_payment_id,
+razorpay_signature:res.razorpay_signature
+
+})
+
+})
+
+showAlert("Payment success","success")
+
+setTimeout(()=>{
+window.location.href="profile.html"
+},1500)
+
+}
+
+
+
+loadAddresses()
+
+</script>
+
+</body>
+</html>

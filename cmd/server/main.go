@@ -18,11 +18,9 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
+	_= godotenv.Load()
 
-	if err != nil {
-		fmt.Println("env file not found")
-	}
+	
 
 	db.Connection()
 	db.DB.AutoMigrate(&models.User{})

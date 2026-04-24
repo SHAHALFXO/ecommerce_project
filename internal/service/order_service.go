@@ -19,7 +19,7 @@ func NewOrderService(or *repo.OrderRepo, cr *repo.CartRepo, cir *repo.CartItemRe
 
 func (s *OrderService) PlaceOrder(UserId uint, addressID uint) (*models.Order, error) {
 
-	cart, err := s.CartRepo.GetOrCreateCart(UserId)
+	cart, err := s.CartRepo.GetCartByUserID(UserId)
 
 	if err != nil {
 		return nil, err

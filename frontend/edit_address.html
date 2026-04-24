@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Edit Address</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+body{
+background:#f9f5f0;
+}
+
+.box{
+max-width:500px;
+margin:auto;
+margin-top:20px;
+background:white;
+padding:20px;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- BACK BUTTON -->
+
+<div class="container mt-3">
+
+<button
+class="btn btn-outline-dark"
+onclick="goBack()">
+
+← Back
+
+</button>
+
+</div>
+
+
+
+<div class="box">
+
+<div id="msgBox"></div>
+
+<h3>Edit Address</h3>
+
+<input id="address1" class="form-control mb-2" placeholder="Address">
+
+<input id="city" class="form-control mb-2" placeholder="City">
+
+<input id="state" class="form-control mb-2" placeholder="State">
+
+<input id="pincode" class="form-control mb-2" placeholder="Pincode">
+
+<button
+class="btn btn-success"
+onclick="updateAddress()">
+
+Update
+
+</button>
+
+</div>
+
+
+<script>
+
+const API = "http://localhost:8080"
+
+const token = localStorage.getItem("token")
+
+if(!token){
+location.href="index.html"
+}
+
+
+// BACK BUTTON
+
+function goBack(){
+history.back()
+}
+
+
+const params =
+new URLSearchParams(window.location.search)
+
+const addressID =
+params.get("id")
+
+
+
+function showError(msg){
+
+document.getElementById("msgBox").innerHTML=
+
+`
+<div class="alert alert-danger">
+
+${msg}
+
+</div>
+`
+
+}
+
+
+function showSuccess(msg){
+
+document.getElementById("msgBox").innerHTML=
+
+`
+<div class="alert alert-success">
+
+✔ ${msg}
+
+</div>
+`
+
+}
+
+
+
+// ======================
+// LOAD ADDRESS
+// ======================
+
+async function loadAddress(){
+
+try{
+
+const res = await fetch(
+API + "/addresses/get",
+{
+headers:{
+Authorization:"Bearer "+token
+}
+}
+)
+
+const data = await res.json()
+
+const list =
+data.addresses || data.data || []
+
+const addr =
+list.find(a=>a.ID == addressID)
+
+if(!addr){
+showError("Address not found")
+return
+}
+
+document.getElementById("address1").value = addr.Address1
+document.getElementById("city").value = addr.City
+document.getElementById("state").value = addr.State
+document.getElementById("pincode").value = addr.Pincode
+
+}catch(e){
+
+showError("load error")
+
+}
+
+}
+
+
+
+// ======================
+// UPDATE ADDRESS
+// ======================
+
+async function updateAddress(){
+
+const address1 =
+document.getElementById("address1").value.trim()
+
+const city =
+document.getElementById("city").value.trim()
+
+const state =
+document.getElementById("state").value.trim()
+
+const pincode =
+document.getElementById("pincode").value.trim()
+
+
+
+if(!address1 || !city || !state || !pincode){
+
+showError("All fields required")
+return
+
+}
+
+
+await fetch(
+
+API + "/addresses/edit/" + addressID,
+
+{
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+address1,
+city,
+state,
+pincode
+})
+
+}
+
+)
+
+showSuccess("Updated")
+
+setTimeout(()=>{
+
+history.back()
+
+},1000)
+
+}
+
+
+loadAddress()
+
+</script>
+
+</body>
+
+</html>

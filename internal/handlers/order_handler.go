@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"ecommerce_project/internal/service"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -25,19 +26,23 @@ func (h *OrderHandler) PlaceOrder(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	order, err := h.orderService.PlaceOrder(userID,req.AddressID)
+	order, err := h.orderService.PlaceOrder(userID, req.AddressID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Println("PLACE ORDER ERROR:", err)
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Order placed succesfully", "order": order})
+	fmt.Println("ORDER CREATED:", order.ID)
 
+	c.JSON(200, gin.H{
+		"order": order,
+	})
 }
 func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 	userID := c.MustGet("user_id").(uint)

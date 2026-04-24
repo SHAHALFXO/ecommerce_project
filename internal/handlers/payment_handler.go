@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
 	"ecommerce_project/internal/service"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,6 +28,8 @@ func (h *PaymentHandler) CreateRazorpayOrder(c *gin.Context) {
 
 	razorpayOrderID, amount, keyID, err := h.paymentService.CreateRazorPayOrder(uint(orderIDInt))
 	if err != nil {
+		    log.Println("RAZORPAY ERROR:", err)
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
