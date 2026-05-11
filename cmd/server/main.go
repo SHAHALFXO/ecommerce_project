@@ -64,17 +64,18 @@ func main() {
 	r := gin.Default()
 
 	config := cors.Config{
-		AllowOrigins:     []string{"http://localhost:5500", "http://127.0.0.1:5500", "https://yourdomain.com"}, // add real domain later
+		AllowOrigins: []string{"http://3.107.180.64:8080"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}
+     
+	r.Use(cors.New(config))
+
 	r.Static("/uploads", "./uploads")
 	r.Static("/frontend", "./frontend")
-
-	r.Use(cors.New(config))
 
 	r.POST("/products/:id/image", productHandler.UploadImage)
 

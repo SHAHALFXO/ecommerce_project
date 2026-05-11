@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -96,8 +97,9 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 			"reset_token": token,
 			"reset_token_expiry": expiry,
 		})
+        frontendURL := os.Getenv("FRONTEND_URL")
 
-		resetLink := "http://localhost:8080/frontend/reset-password.html?token=" + token
+		resetLink := frontendURL + "/frontend/reset-password.html?token=" + token
 
 		err=utils.SendResetEmail(user.Email, resetLink)
 		if err!=nil{

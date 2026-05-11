@@ -16,8 +16,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "2580"
       POSTGRES_DB: ecommerce
-    ports: 
-      - "5433:5432" 
     volumes:
       - pg_data:/var/lib/postgresql/data  
 
