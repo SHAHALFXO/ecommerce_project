@@ -18,9 +18,7 @@ import (
 )
 
 func main() {
-	_= godotenv.Load()
-
-	
+	_ = godotenv.Load()
 
 	db.Connection()
 	db.DB.AutoMigrate(&models.User{})
@@ -42,8 +40,6 @@ func main() {
 	addressService := service.NewAddressService(addressRepo)
 	addressHandler := handlers.NewAddressHandler(addressService)
 
-	
-
 	productRepo := repo.NewProductRepo(db.DB)
 	productsvc := service.NewProductService(productRepo)
 	productHandler := handlers.NewProductHandler(productsvc)
@@ -64,18 +60,22 @@ func main() {
 	r := gin.Default()
 
 	config := cors.Config{
-		AllowOrigins: []string{"http://3.107.180.64:8080"},
+		AllowOrigins:     []string{"http://3.107.180.64:8080"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}
-     
+
 	r.Use(cors.New(config))
 
 	r.Static("/uploads", "./uploads")
 	r.Static("/frontend", "./frontend")
+
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(302, "/frontend/index.html")
+	})
 
 	r.POST("/products/:id/image", productHandler.UploadImage)
 
@@ -127,14 +127,14 @@ func main() {
 
 	payment.POST("/razorpay/order/:order_id", paymentHandler.CreateRazorpayOrder)
 	payment.POST("/razorpay/verify", paymentHandler.VerifyRazorpayPayment)
-   
+
 	address := r.Group("/addresses")
 	address.Use(middleware.AuthMiddleware())
 
 	address.POST("/add", addressHandler.AddAddress)
 	address.GET("/get", addressHandler.GetMyAddresses)
 	address.PUT("/edit/:address_id", addressHandler.EditAddress)
-	
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
